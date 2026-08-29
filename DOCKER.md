@@ -23,13 +23,7 @@
 docker build -t screenshot-to-code .
 ```
 
-可在 `docker build` 时通过 `--build-arg` 覆盖镜像内的默认端口（如需修改）：
-
-```bash
-docker build \
-  --build-arg BACKEND_PORT=9000 \
-  -t screenshot-to-code .
-```
+端口在**运行时**用环境变量设置（见第三节“端口”），构建时无需指定。
 
 > 构建需要联网：会执行 `pnpm build`（前端）、`poetry install`（后端依赖）以及
 > `playwright install --with-deps chromium`（用于截图预览工具），首次构建较慢且体积较大。
@@ -84,6 +78,16 @@ docker run -p 7001:7001 -it \
 | `ANTHROPIC_API_KEY` | 二选一 | Anthropic Claude key |
 | `GEMINI_API_KEY` | 二选一 | Google Gemini key |
 | `OPENAI_BASE_URL` | 可选 | 覆盖 OpenAI 兼容的 base URL（详见第四节） |
+
+### 端口（可选）
+
+| 变量 | 默认 | 说明 |
+|------|------|------|
+| `NGINX_PORT` | `7001` | 容器内 nginx 对外监听端口 |
+| `BACKEND_PORT` | `9000` | 后端内部端口（nginx 会同步转发到该端口） |
+
+> 两个变量需配套使用：若只改 `BACKEND_PORT`，nginx 仍按默认 `9000` 转发，会导致后端连不上。
+> 注意：改的是**容器内**端口，外部映射仍需用 `-p 宿主机端口:容器端口`。
 
 ### 能力 / 调试相关（可选）
 
@@ -180,4 +184,14 @@ docker run -p 7001:7001 -it \
   检查第三方兼容端点是否支持 `/v1/responses` 与流式输出，以及 WebSocket 转发是否正常。
 
 - **需要改监听端口**
-  调整 `docker run -p 宿主机端口:7001`，把宿主端口映射到容器内的 `7001` 即可。
+  可设置 `NGINX_PORT`（与 `BACKEND_PORT` 配套）改变**容器内**端口，再用
+  `docker run -p 宿主机端口:容器端口` 对外映射。例如让容器内 nginx 监听 `8080`：
+
+  ```bash
+  docker run -p 8080:8080 -it \
+    -e NGINX_PORT=8080 \
+    -e BACKEND_PORT=9000 \
+    screenshot-to-code
+  ```
+
+  访问 `http://localhost:8080`。`-e` 与 `--env-file` 均支持这两个变量。

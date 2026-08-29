@@ -20,10 +20,14 @@ RUN pnpm build
 FROM python:3.12.3-slim-bookworm
 
 ENV POETRY_VERSION 1.8.0
+
+# 端口默认值（可在运行时通过 -e 覆盖）
+ENV NGINX_PORT 7001
 ENV BACKEND_PORT 9000
 
 # Install nginx (hosts the frontend and reverse-proxies API calls)
-RUN apt-get update && apt-get install -y --no-install-recommends nginx \
+# gettext-base provides envsubst, used to render the nginx config template.
+RUN apt-get update && apt-get install -y --no-install-recommends nginx gettext-base \
     && rm -rf /var/lib/apt/lists/*
 
 # Install system dependencies
@@ -50,8 +54,8 @@ COPY backend/ /app/
 # Copy the built frontend (served by nginx)
 COPY --from=frontend-build /tmp/frontend/dist /app/dist
 
-# Copy nginx config and the startup script
-COPY nginx.conf /etc/nginx/nginx.conf
+# Copy nginx config template and the startup script
+COPY nginx.conf /etc/nginx/nginx.conf.template
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
