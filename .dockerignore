@@ -1,0 +1,22 @@
+# Ignore everything by default
+*
+
+# Keep only what the build needs
+!/backend/**
+!/frontend/**
+!/Dockerfile
+!/nginx.conf
+!/entrypoint.sh
+
+# Exclude heavy / generated / VCS content inside backend & frontend
+.git
+.gitignore
+.eslintcache
+**/node_modules
+**/dist
+**/__pycache__
+**/*.pyc
+backend/.venv
+**.env
+backend/local_assets
+backend/run_logs
